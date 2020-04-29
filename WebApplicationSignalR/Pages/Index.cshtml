@@ -1,0 +1,146 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+
+<div class="row">
+    @*
+        <div class="col-md-6">
+            <div class="input-group">
+                <input id="uploadFile" placeholder="" disabled="disabled" class="form-control" style="height:36px" />
+                <div class="input-group-btn">
+                    <div class="fileUpload btn btn-info">
+                        <span>...</span>
+                        <input type="file" name="fileToUpload" id="fileToUpload" class="upload" onchange="fileToUploadOnchange()" multiple accept=".csv" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    *@
+    <input type="button" class="btn btn-info btn-sm" value="Upload" id="btnUpload" />
+</div>
+
+
+<div class="row">
+    <div class="col-6">
+        <ul id="messagesList"></ul>
+    </div>
+</div>
+
+
+<div id="progressModal" class="modal fade modal-center-c" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog modal-lg" style="width: 50% !important;   top: 40vh;">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped" role="progressbar" id="progress_bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <span>Count: <text id="uploadCount">0</text></span>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- / .modal-content -->
+    </div> <!-- / .modal-dialog -->
+</div> <!-- / .modal -->
+
+
+@section Scripts {
+    <script src="~/js/signalr/dist/browser/signalr.js"></script>
+    <script>
+        "use strict";
+
+        var connection = new signalR.HubConnectionBuilder().withUrl("/broadcast").build();
+
+        connection.on("feedBack", function (model) {
+            $("#progress_bar").css("width", `${model.currentPercent}%`);
+            $("#uploadCount").html(model.uploadCount);
+        });
+
+        connection.start().then(function () {
+            console.log("Sinalr Connected");
+        }).catch(function (err) {
+            console.log(err.toString());
+        });
+
+        $("#btnUpload").click(function (e) {
+            e.preventDefault();
+            uploadFile();
+        });
+
+        function uploadFile() {
+            //var file = document.getElementById('fileToUpload').files[0];
+            //if (file) {
+                $("#progressModal").modal("show");
+                var url = '@Url.Action("UploadFile", "Upload")';
+                //var fd = new FormData();
+                //fd.append("fileToUpload", file);
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", uploadComplete, false);
+                xhr.addEventListener("error", uploadFailed, false);
+                xhr.addEventListener("abort", uploadCanceled, false);
+                xhr.open("POST", url);
+                //xhr.send(fd);
+                xhr.send();
+            //} else {
+            //    alert("You are can not upload an empty file");
+            //}
+        }
+
+        function uploadComplete(evt) {
+            var response = JSON.parse(evt.target.response);
+             $("#progressModal").modal("hide");
+             ResetUploadModal();
+            if (response.error) {
+                alert(response.message);
+                return;
+            }
+            //populateTableData(response.data);
+
+        }
+        function populateTableData(data) {
+            if (data.length <= 0) return;
+                $("#tableBody").html('');
+            $.each(data, function (i, val) {
+                let tableRow = $("<tr></tr>");
+                let tablecells = `<td>${i + 1}</td>` +
+                    `<td>${val.company}</td>` +
+                    `<td>${val.category}</td>` +
+                    `<td>${val.city}</td>` +
+                    `<td>${val.date}</td>` +
+                    `<td>${val.currency}</td>` +
+                    `<td>${val.strAmount}</td>`;
+                tableRow.html(tablecells);
+                $("#tableBody").append(tableRow[0]);
+            });
+        }
+        function uploadFailed(evt) {
+            $("#progressModal").modal("hide");
+            ResetUploadModal();
+            alert("There was an error attempting to upload the file");
+        }
+        function uploadCanceled(evt) {
+            $("#progressModal").modal("hide");
+            ResetUploadModal();
+            alert("The upload has been canceled by the user or the browser dropped the connection")
+        }
+        function ResetUploadModal() {
+            document.getElementById("uploadFile").value = '';
+            document.getElementById("fileToUpload").value = null;
+            $("#progressContainer").hide();
+            $("#progress_bar").css("width", "-1%");
+        }
+    </script>
+
+}
