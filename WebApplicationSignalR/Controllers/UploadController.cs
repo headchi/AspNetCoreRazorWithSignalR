@@ -26,18 +26,29 @@ namespace WebApplicationSignalR.Controllers
         {
             try
             {
+                // FormDataからSignalRのconnectionIdを取り出す
+                if (!Request.Form.TryGetValue("connectionId", out var connectionIdOfSignalR))
+                {
+                    throw new HubException("SignalRのconnectionIdが渡されていません。"); 
+                }
+                var myConnectionId = connectionIdOfSignalR[0];
+                SendFeedBack(myConnectionId);
 
+                /*
                 var counter = 0;
                 var currentCount = 0;
+                */
 
                 /*
                 var data = new List<RecordItem>();
                 var postedFile = Request.Form.Files;
                 */
 
+                /*
                 await Task.Delay(500);
                 currentCount++;
                 SendFeedBack(currentCount, counter);
+                */
 
                 /*
                 if (postedFile.Count <= 0 || postedFile == null)
@@ -49,9 +60,11 @@ namespace WebApplicationSignalR.Controllers
                 }
                 */
 
+                /*
                 await Task.Delay(500);
                 currentCount++;
                 SendFeedBack(currentCount, counter);
+                */
 
                 /*
                 var fileInfo = new FileInfo(postedFile[0].FileName);
@@ -129,9 +142,11 @@ namespace WebApplicationSignalR.Controllers
                 }
                 */
 
+                /*
                 await Task.Delay(500);
                 currentCount++;
-                SendFeedBack(currentCount, counter);
+                SendFeedBack(myConnectionId, currentCount, counter);
+                */
 
                 //return Json(new { error = false, data = data });
                 return Json(new { error = false, data = new { } });
@@ -148,8 +163,24 @@ namespace WebApplicationSignalR.Controllers
             }
         }
 
-        private async void SendFeedBack(int currentCount, int UploadCount)
+        private async void SendFeedBack(string myConnectionId)
         {
+            /*
+            var totalCount = 4;
+            var feedBackModel = new FeedbackModel()
+            {
+                currentCount = currentCount,
+                currentPercent = (currentCount * 100 / totalCount).ToString(),
+                UploadCount = UploadCount,
+            };
+            */
+            //await hubContext.Clients.All.SendAsync("feedBack", feedBackModel);
+            await hubContext.Clients.Client(myConnectionId).SendAsync("feedBack", new { connectionId = myConnectionId });
+        }
+
+        private async void SendFeedBackAll(string myConnectionId)
+        {
+            /*
             var totalCount = 4;
             var feedBackModel = new FeedbackModel()
             {
@@ -158,6 +189,8 @@ namespace WebApplicationSignalR.Controllers
                 UploadCount = UploadCount,
             };
             await hubContext.Clients.All.SendAsync("feedBack", feedBackModel);
+            */
+            await hubContext.Clients.All.SendAsync("feedBack", new { connectionId = myConnectionId });
         }
 
         public IActionResult Privacy()

@@ -64,15 +64,18 @@
         var connection = new signalR.HubConnectionBuilder().withUrl("/broadcast").build();
 
         connection.on("feedBack", function (model) {
-            $("#progress_bar").css("width", `${model.currentPercent}%`);
-            $("#uploadCount").html(model.uploadCount);
+            alert("【受信】" + model.connectionId);
+            //$("#progress_bar").css("width", `${model.currentPercent}%`);
+            //$("#uploadCount").html(model.uploadCount);
         });
 
+        /*
         connection.start().then(function () {
             console.log("Sinalr Connected");
         }).catch(function (err) {
             console.log(err.toString());
         });
+        */
 
         $("#btnUpload").click(function (e) {
             e.preventDefault();
@@ -80,22 +83,46 @@
         });
 
         function uploadFile() {
-            //var file = document.getElementById('fileToUpload').files[0];
-            //if (file) {
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                postToController();
+            }
+            connection.start().then(function () {
+                console.log("Sinalr Connected");
+                postToController();
+            }).catch(function (err) {
+                console.log(err.toString());
+            });
+
+            @*
+            var file = document.getElementById('fileToUpload').files[0];
+            if (file) {
                 $("#progressModal").modal("show");
                 var url = '@Url.Action("UploadFile", "Upload")';
-                //var fd = new FormData();
-                //fd.append("fileToUpload", file);
+                var fd = new FormData();
+                fd.append("fileToUpload", file);
                 var xhr = new XMLHttpRequest();
                 xhr.addEventListener("load", uploadComplete, false);
                 xhr.addEventListener("error", uploadFailed, false);
                 xhr.addEventListener("abort", uploadCanceled, false);
                 xhr.open("POST", url);
-                //xhr.send(fd);
-                xhr.send();
-            //} else {
-            //    alert("You are can not upload an empty file");
-            //}
+                xhr.send(fd);
+            } else {
+                alert("You are can not upload an empty file");
+            }
+            *@
+        }
+
+        function postToController() {
+            var url = '@Url.Action("UploadFile", "Upload")';
+            var fd = new FormData();
+            alert("【送信】" + connection.connection.connectionId);
+            fd.append("connectionId", connection.connection.connectionId);
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", url);
+            xhr.addEventListener("load", uploadComplete, false);
+            xhr.addEventListener("error", uploadFailed, false);
+            xhr.addEventListener("abort", uploadCanceled, false);
+            xhr.send(fd);
         }
 
         function uploadComplete(evt) {
